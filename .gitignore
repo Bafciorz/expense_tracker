@@ -1,0 +1,5 @@
+expenses.db
+
+.venv/
+venv/
+env/
