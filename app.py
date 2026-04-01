@@ -1,33 +1,33 @@
 import streamlit as st
-import sqlite3
-import pandas
-from datetime import date
+from src.categories import Category
+from src.database import DatabaseManager
 
-st.title("💸 Mój Tracker Wydatków")
-try:
-    connection = sqlite3.connect('expenses.db')
-    cursor = connection.cursor()
-    cursor.execute("PRAGMA foreign_keys = ON")
-    cursor.execute('''
-        CREATE table if not exists kategorie(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nazwa TEXT unique
-        );
-    ''')
-    cursor.execute('''
-            CREATE table if not exists wydatki(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            data_wydatku TEXT,
-            kwota REAL check(kwota>0),
-            kategoria_id INTEGER references kategorie(id),
-            opis TEXT
-            );
-        ''')
+st.title("Expenses tracker")
 
-    domyslne_kategorie = ['Jedzenie', 'Transport', 'Rozrywka', 'Rachunki', 'Inne']
-    for kat in domyslne_kategorie:
-        cursor.execute("INSERT OR IGNORE INTO kategorie (nazwa) VALUES (?)", (kat,))
+db = DatabaseManager("expenses.db")
 
-    connection.commit()
-except sqlite3.Error as error:
-    st.error(f'Błąd bazy danych: {error}')
+st.sidebar.header("Filters")
+
+selected_cat_name = st.sidebar.selectbox(
+    "Choose category:",
+    ["All"] + [kat.value for kat in Category]
+)
+
+selected_cat = None
+if selected_cat_name != "All":
+    selected_cat = next(k for k in Category if k.value == selected_cat_name)
+
+st.subheader("Expenses list")
+
+
+df = db.get_expenses(category=selected_cat)
+
+if df.empty:
+    st.info("Brak wydatków do wyświetlenia dla wybranych filtrów.")
+else:
+    # Wyświetlamy ładną tabelę
+    st.dataframe(df, use_container_width=True)
+
+    # Małe podsumowanie pod tabelą
+    total = df['amount'].sum()
+    st.metric(label="Suma wydatków", value=f"{total:.2f} zł")
