@@ -75,12 +75,28 @@ else:
     if not df.empty:
         total_sum = df['amount'].sum()
         st.metric("sum of your espenses", f"{total_sum:,.2f} zł".replace(",", " "))
+        df_display = df.copy()
+        df_display.insert(0, 'No.', range(1, len(df) + 1))
 
-        st.dataframe(
-            df,
+        selection = st.dataframe(
+            df_display,
             use_container_width=True,
-            hide_index=True
+            hide_index=True,
+            column_config={"id": None},
+            on_select="rerun",
+            selection_mode="multi-row"
         )
+
+        selected_rows = selection.selection.rows
+
+        if selected_rows:
+            if st.button(f"Delete selected ({len(selected_rows)})", type="primary"):
+                for row_idx in selected_rows:
+                    id_to_del = int(df.iloc[row_idx]['id'])
+                    db.delete_expense(id_to_del)
+
+                st.success("Successfully deleted!")
+                st.rerun()
 
         csv = df.to_csv(index=False).encode('utf-8')
         st.download_button(

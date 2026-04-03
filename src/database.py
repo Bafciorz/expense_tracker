@@ -53,7 +53,7 @@ class DatabaseManager:
 
     def get_expenses(self, start_date: str = None, end_date : str = None, category: Category = None) -> pd.DataFrame:
         query = '''
-        SELECT e.expense_date, e.amount, c.category_name, e.description 
+        SELECT e.id, e.expense_date, e.amount, c.category_name, e.description 
         FROM expenses e 
         JOIN categories c on e.id_category = c.id
         WHERE 1=1
@@ -73,6 +73,11 @@ class DatabaseManager:
 
         query += ' ORDER BY e.expense_date DESC'
         return pd.read_sql_query(sql = query, con = self.conn ,params = limitations)
+
+    def delete_expense (self, id_expense : int) -> None:
+        with self.conn:
+            self.conn.execute('''DELETE from expenses WHERE id = ?''', (int(id_expense),))
+
 
 
 
