@@ -3,6 +3,7 @@ import pandas
 import pandas as pd
 from src.categories import Category
 
+
 class DatabaseManager:
 
     db_path : str

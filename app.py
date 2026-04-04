@@ -3,6 +3,8 @@ import pandas as pd
 from datetime import datetime, date
 from src.database import DatabaseManager
 from src.categories import Category
+import plotly.express as px
+
 
 # --- initialization ---
 db = DatabaseManager("expenses.db")
@@ -16,7 +18,7 @@ st.set_page_config(
 st.sidebar.title("Main menu")
 choice = st.sidebar.radio(
     "Choose interaction",
-    ["Browse your expense", "Add new expense"]
+    ["Browse your expense", "Add new expense", "Pie chart by category"]
 )
 
 # --- adding expense---
@@ -46,6 +48,38 @@ if choice == "Add new expense":
                 description=description
             )
             st.success(f"Succesfully added: {amount} zł to category{category_name}")
+
+elif choice == "Pie chart by category":
+    st.header("Pie chart by category")
+
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Filtr")
+
+    f_category_name = st.sidebar.selectbox(
+        "Category",
+        ["All"] + [c.value for c in Category]
+    )
+
+    f_start_date = st.sidebar.date_input("From", value=datetime(2024, 1, 1))
+    f_end_date = st.sidebar.date_input("To", value=date.today())
+
+    selected_cat = None
+    if f_category_name != "All":
+        selected_cat = next(c for c in Category if c.value == f_category_name)
+
+    df = db.get_expenses(
+        start_date=f_start_date,
+        end_date=f_end_date,
+        category=selected_cat
+    )
+
+    if not df.empty:
+        col1_chart, col2 = st.columns([1,1])
+
+        with col1_chart:
+            category_sum = df.groupby('category_name')['amount'].sum().reset_index()
+            fig = px.pie(category_sum,values='amount', names='category_name', title="expenses structure")
+            st.plotly_chart(fig,use_container_width=True)
 
 # --- history ---
 else:
@@ -98,6 +132,8 @@ else:
                 st.success("Successfully deleted!")
                 st.rerun()
 
+
+
         csv = df.to_csv(index=False).encode('utf-8')
         st.download_button(
             label="Download as csv",
@@ -110,4 +146,4 @@ else:
 
 # --- ---
 st.sidebar.markdown("---")
-st.sidebar.info("xd")
+st.sidebar.info("Jakub Bafia")
